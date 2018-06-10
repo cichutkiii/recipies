@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Recipies</string>
+    <string name="mock_recipe_title">Recipe Title</string>
+    <string name="mock_recipe_servings">servings</string>
 </resources>
