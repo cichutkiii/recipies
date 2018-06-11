@@ -1,9 +1,12 @@
 package pl.preclaw.recipies;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,7 +36,10 @@ public class MainActivity extends AppCompatActivity implements RecipyAdapter.Lis
 
     private RecipyList recipies;
     private RecipyAdapter recipyAdapter;
-    private LinearLayoutManager layoutManager;
+    private GridLayoutManager layoutManager;
+    public static String RECIPE_DETAIL= "detail";
+    public static String RECIPE_INDEX= "index";
+    public static String RECIPE_BUNDLE= "bundle";
 
 
     @Override
@@ -42,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements RecipyAdapter.Lis
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         recipies = new RecipyList();
-        layoutManager = new LinearLayoutManager(this);
+        layoutManager = new GridLayoutManager(this,numberOfColumns());
         recipiesRv.setLayoutManager(layoutManager);
         getRecipiesData();
 
@@ -91,6 +97,25 @@ public class MainActivity extends AppCompatActivity implements RecipyAdapter.Lis
 
     @Override
     public void onListItemClick(int clickedItemIndex) {
+        Intent intent = new Intent(this,RecipeDetailActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList(RECIPE_DETAIL, recipies.getRecipies());
+        bundle.putInt(RECIPE_INDEX,clickedItemIndex);
 
+
+        intent.putExtra(RECIPE_BUNDLE,bundle);
+        startActivity(intent);
+
+
+    }
+    private int numberOfColumns() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        // You can change this divider to adjust the size of the poster
+        int widthDivider = 600;
+        int width = displayMetrics.widthPixels;
+        int nColumns = width / widthDivider;
+        if (nColumns < 1) return 1; //to keep the grid aspect
+        return nColumns;
     }
 }

@@ -19,33 +19,41 @@ public class Recipy implements Parcelable
     private Integer servings;
 
     private String image;
-    public final static Parcelable.Creator<Recipy> CREATOR = new Creator<Recipy>() {
 
 
-        @SuppressWarnings({
-                "unchecked"
-        })
+
+
+    public Recipy() {
+    }
+
+    protected Recipy(Parcel in) {
+        if (in.readByte() == 0) {
+            id = null;
+        } else {
+            id = in.readInt();
+        }
+        name = in.readString();
+        ingredients = in.createTypedArrayList(Ingredient.CREATOR);
+        steps = in.createTypedArrayList(Step.CREATOR);
+        if (in.readByte() == 0) {
+            servings = null;
+        } else {
+            servings = in.readInt();
+        }
+        image = in.readString();
+    }
+
+    public static final Creator<Recipy> CREATOR = new Creator<Recipy>() {
+        @Override
         public Recipy createFromParcel(Parcel in) {
             return new Recipy(in);
         }
 
+        @Override
         public Recipy[] newArray(int size) {
-            return (new Recipy[size]);
+            return new Recipy[size];
         }
-
     };
-
-    protected Recipy(Parcel in) {
-        this.id = ((Integer) in.readValue((Integer.class.getClassLoader())));
-        this.name = ((String) in.readValue((String.class.getClassLoader())));
-        in.readList(this.ingredients, (pl.preclaw.recipies.importData.Ingredient.class.getClassLoader()));
-        in.readList(this.steps, (pl.preclaw.recipies.importData.Step.class.getClassLoader()));
-        this.servings = ((Integer) in.readValue((Integer.class.getClassLoader())));
-        this.image = ((String) in.readValue((String.class.getClassLoader())));
-    }
-
-    public Recipy() {
-    }
 
     public Integer getId() {
         return id;
@@ -95,17 +103,29 @@ public class Recipy implements Parcelable
         this.image = image;
     }
 
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(id);
-        dest.writeValue(name);
-        dest.writeList(ingredients);
-        dest.writeList(steps);
-        dest.writeValue(servings);
-        dest.writeValue(image);
-    }
 
+    @Override
     public int describeContents() {
         return 0;
     }
 
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (id == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeInt(id);
+        }
+        dest.writeString(name);
+        dest.writeTypedList(ingredients);
+        dest.writeTypedList(steps);
+        if (servings == null) {
+            dest.writeByte((byte) 0);
+        } else {
+            dest.writeByte((byte) 1);
+            dest.writeInt(servings);
+        }
+        dest.writeString(image);
+    }
 }
