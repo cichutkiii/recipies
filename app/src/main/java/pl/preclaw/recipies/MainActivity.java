@@ -98,12 +98,9 @@ public class MainActivity extends AppCompatActivity implements RecipyAdapter.Lis
     @Override
     public void onListItemClick(int clickedItemIndex) {
         Intent intent = new Intent(this,RecipeDetailActivity.class);
-        Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(RECIPE_DETAIL, recipies.getRecipies());
-        bundle.putInt(RECIPE_INDEX,clickedItemIndex);
+        intent.putExtra(RECIPE_DETAIL, recipies.getRecipies());
+        intent.putExtra(RECIPE_INDEX,clickedItemIndex);
 
-
-        intent.putExtra(RECIPE_BUNDLE,bundle);
         startActivity(intent);
 
 

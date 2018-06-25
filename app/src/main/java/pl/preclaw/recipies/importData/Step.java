@@ -5,7 +5,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Step implements Parcelable
-{
+        {
 
 
     private Integer id;
@@ -31,10 +31,9 @@ public class Step implements Parcelable
             return (new Step[size]);
         }
 
-    }
-            ;
+    };
 
-    protected Step(Parcel in) {
+    private Step(Parcel in) {
         this.id = ((Integer) in.readValue((Integer.class.getClassLoader())));
         this.shortDescription = ((String) in.readValue((String.class.getClassLoader())));
         this.description = ((String) in.readValue((String.class.getClassLoader())));
@@ -96,5 +95,6 @@ public class Step implements Parcelable
     public int describeContents() {
         return 0;
     }
+
 
 }

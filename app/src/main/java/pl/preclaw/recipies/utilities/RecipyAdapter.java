@@ -31,6 +31,11 @@ public class RecipyAdapter extends RecyclerView.Adapter<RecipyAdapter.RecipyView
         void onListItemClick(int clickedItemIndex);
     }
 
+    @Override
+    public long getItemId(int position) {
+        return super.getItemId(position);
+    }
+
     public RecipyAdapter(RecipyList recipies, ListItemClickListener listener) {
         recipyList = recipies;
         mOnClickListener = listener;
@@ -57,7 +62,7 @@ public class RecipyAdapter extends RecyclerView.Adapter<RecipyAdapter.RecipyView
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecipyViewHolder holder, int position) {
+    public void onBindViewHolder(RecipyViewHolder holder, int position) {
         holder.bind(position);
     }
 
