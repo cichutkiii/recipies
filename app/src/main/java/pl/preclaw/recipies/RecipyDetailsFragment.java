@@ -83,18 +83,19 @@ public class RecipyDetailsFragment extends Fragment implements IngredientAdapter
             recipyList.setRecipies(bundle.<Recipy>getParcelableArrayList(RECIPE_DETAIL));
             recipy = recipyList.getRecipies().get(bundle.getInt(RECIPE_INDEX));
         }
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-        LinearLayoutManager stepLayoutManager = new LinearLayoutManager(getContext());
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
+        LinearLayoutManager stepLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
 
         ingredientAdapter = new IngredientAdapter(recipy, this);
-        stepAdapter = new StepAdapter(recipy.getSteps(), this);
+        stepAdapter = new StepAdapter(recipy.getSteps());
         ingredientsRv.setLayoutManager(linearLayoutManager);
         ingredientsRv.setAdapter(ingredientAdapter);
-        stepsRv.setLayoutManager(stepLayoutManager);
-//        stepsRv.setNestedScrollingEnabled(false);
-        stepsRv.setAdapter(stepAdapter);
+        stepsRv.setNestedScrollingEnabled(false);
+        ingredientsRv.setNestedScrollingEnabled(false);
         stepsRv.setHasFixedSize(true);
-//        stepsRv.setNestedScrollingEnabled(false);
+        stepsRv.setLayoutManager(stepLayoutManager);
+        stepsRv.setAdapter(stepAdapter);
+
 
         return rootView;
     }
