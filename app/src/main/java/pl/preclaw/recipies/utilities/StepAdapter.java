@@ -19,7 +19,7 @@ import static android.support.constraint.Constraints.TAG;
 public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder> {
 
 
-//    final private StepAdapter.ListItemClickListener mOnClickListener;
+    final private StepAdapter.ListItemClickListener mOnClickListener;
 
     private List<Step> stepList;
 
@@ -29,24 +29,20 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
             implements View.OnClickListener {
         private TextView stepShortDescription;
         private ImageView stepImage;
-        private TextView tv;
         StepViewHolder(View view) {
             super(view);
             stepShortDescription = view.findViewById(R.id.step_short_descr);
             stepImage = view.findViewById(R.id.step_image);
-            tv = view.findViewById(R.id.textView);
             view.setOnClickListener(this);
         }
 
-//        void Bind(int listIndex) {
-//
-//        }
+
 
 
         @Override
         public void onClick(View v) {
             int clickedPosition = getAdapterPosition();
-//            mOnClickListener.onListItemClick(clickedPosition);
+            mOnClickListener.onListItemClick(clickedPosition);
         }
     }
 
@@ -54,9 +50,9 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
         void onListItemClick(int clickedItemIndex);
     }
 
-    public StepAdapter(List<Step> steps) {
+    public StepAdapter(List<Step> steps, StepAdapter.ListItemClickListener listener) {
         stepList= steps;
-//        mOnClickListener = listener;
+        mOnClickListener = listener;
     }
 
     @NonNull
@@ -82,7 +78,6 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
     public void onBindViewHolder(@NonNull StepViewHolder holder, int position) {
         Log.d(TAG, "Position" + position);
         holder.stepShortDescription.setText(stepList.get(position).getShortDescription());
-        holder.tv.setText(String.valueOf(position));
 
         if(!stepList.get(position).getThumbnailURL().isEmpty()){
             Picasso.get()
@@ -91,7 +86,7 @@ public class StepAdapter extends RecyclerView.Adapter<StepAdapter.StepViewHolder
                     .error(R.drawable.error_image)
                     .into(holder.stepImage);
         }
-//        holder.Bind(position);
+
 
 
     }

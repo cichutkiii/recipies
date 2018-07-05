@@ -15,7 +15,6 @@ import pl.preclaw.recipies.R;
 import pl.preclaw.recipies.importData.Recipy;
 
 public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.IngredientViewHolder> {
-    final private IngredientAdapter.ListItemClickListener mOnClickListener;
 
 
     TextView recipeIngredient;
@@ -24,13 +23,10 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.In
     private Context context;
 
 
-    public interface ListItemClickListener {
-        void onListItemClick(int clickedItemIndex);
-    }
 
-    public IngredientAdapter(Recipy recipe, IngredientAdapter.ListItemClickListener listener) {
+
+    public IngredientAdapter(Recipy recipe) {
         recipy = recipe;
-        mOnClickListener = listener;
         viewHolderCount = 0;
     }
 
@@ -93,7 +89,6 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.In
         @Override
         public void onClick(View v) {
             int clickedPosition = getAdapterPosition();
-            mOnClickListener.onListItemClick(clickedPosition);
 
         }
     }

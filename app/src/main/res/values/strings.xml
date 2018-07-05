@@ -8,4 +8,7 @@
     <string name="ingredients">Ingredients</string>
     <string name="step_short_descr">short description</string>
     <string name="step_descr">step description</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="description">Description</string>
 </resources>

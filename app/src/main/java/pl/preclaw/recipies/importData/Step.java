@@ -4,7 +4,7 @@ package pl.preclaw.recipies.importData;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Step implements Parcelable
+public class  Step implements Parcelable
         {
 
 
