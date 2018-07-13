@@ -1,14 +1,13 @@
 package pl.preclaw.recipies;
 
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
 import android.text.Html;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.FrameLayout;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
@@ -35,116 +34,95 @@ import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import pl.preclaw.recipies.importData.RecipyList;
+import butterknife.Unbinder;
 import pl.preclaw.recipies.importData.Step;
 
-public class StepDetailActivity extends AppCompatActivity implements Player.EventListener {
 
+public class StepDetailFragment extends Fragment implements Player.EventListener{
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        releasePlayer();
-        this.finish();
-
-    }
-
-    @BindView(R.id.playerView)
+    @BindView(R.id.playerView_tab)
     PlayerView playerView;
-    @BindView(R.id.descr_previous)
-    Button previous;
-    @BindView(R.id.descr_next)
-    Button next;
     @BindView(R.id.detail_descr)
     TextView detailDescr;
-
+    Unbinder unbinder;
     private ArrayList<Step> steps;
-    private int recipeIndex;
-    public static String STEP_INDEX = "index";
-    public static String STEP_BUNDLE = "bundle";
+    private int index;
     private SimpleExoPlayer mExoPlayer;
-    private static MediaSessionCompat mMediaSession;
-    private PlaybackStateCompat.Builder mStateBuilder;
     private String userAgent;
 
+    public StepDetailFragment() {
+        // Required empty public constructor
+    }
+
+    public static StepDetailFragment newInstance(String param1, String param2) {
+        StepDetailFragment fragment = new StepDetailFragment();
+        Bundle args = new Bundle();
+
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_step_detail);
-        ButterKnife.bind(this);
-        Bundle bundle = getIntent().getBundleExtra("REAL");
-        if (bundle != null) {
-            steps = bundle.getParcelableArrayList(STEP_BUNDLE);
-            recipeIndex = bundle.getInt(STEP_INDEX);
 
+    }
 
-        }
-        userAgent = Util.getUserAgent(this, "recipies");
-
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View view = inflater.inflate(R.layout.fragment_step_detail, container, false);
+        unbinder = ButterKnife.bind(this, view);
+        userAgent = Util.getUserAgent(getContext(), "recipies");
         setStepData();
-        next.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (steps.size() - 1 == recipeIndex) {
-                    recipeIndex = 0;
 
-                } else {
-                    recipeIndex++;
-                }
-                releasePlayer();
-                setStepData();
+        return view;
+    }
 
-            }
-        });
-        previous.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (recipeIndex == 0) {
-                    recipeIndex = steps.size() - 1;
+    public void setSteps(ArrayList<Step> setStep) {
+        steps = setStep;
+    }
 
-                } else {
-                    recipeIndex--;
-                }
-                releasePlayer();
-                setStepData();
-            }
-        });
+    public void setStepIndex(int idx) {
+        index = idx;
     }
 
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
+    }
     private void setStepData() {
-        if (!steps.get(recipeIndex).getVideoURL().isEmpty()) {
+        if (!steps.get(index).getVideoURL().isEmpty()) {
 
             playerView.showController();
             playerView.setVisibility(View.VISIBLE);
-            initializePlayer(Uri.parse(steps.get(recipeIndex).getVideoURL()));
+            if (!(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT))
+            {
+                hideUI();
+                playerView.getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
+                playerView.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
+            }
+            initializePlayer(Uri.parse(steps.get(index).getVideoURL()));
 
         } else {
+            detailDescr.setText(Html.fromHtml(steps.get(index).getDescription()));
             playerView.setVisibility(View.GONE);
             playerView.hideController();
-     }
+        }
 
-        detailDescr.setText(Html.fromHtml(steps.get(recipeIndex).getDescription()));
+
 
 
     }
-
-    private void hideUI() {
-        this.getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
-    }
-
     private void initializePlayer(Uri mediaUri) {
         if (mExoPlayer == null) {
             BandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
             TrackSelection.Factory trackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
-            DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(this, userAgent);
-            mExoPlayer = ExoPlayerFactory.newSimpleInstance(this, new DefaultTrackSelector(trackSelectionFactory));
+            DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(getContext(), userAgent);
+            mExoPlayer = ExoPlayerFactory.newSimpleInstance(getContext(), new DefaultTrackSelector(trackSelectionFactory));
             playerView.setPlayer(mExoPlayer);
 
             mExoPlayer.addListener(this);
@@ -154,25 +132,24 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
             mExoPlayer.setPlayWhenReady(false);
         }
     }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        releasePlayer();
-
-    }
-
-    private void releasePlayer() {
+    public void releasePlayer() {
         if(mExoPlayer != null){
             mExoPlayer.removeListener(this);
             mExoPlayer.stop();
             mExoPlayer.release();
-
             mExoPlayer = null;
         }
 
     }
-
+    private void hideUI() {
+        getActivity().getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
+    }
     @Override
     public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
 
@@ -222,5 +199,4 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
     public void onSeekProcessed() {
 
     }
-
 }

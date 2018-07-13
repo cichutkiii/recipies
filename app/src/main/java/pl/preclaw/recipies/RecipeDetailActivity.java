@@ -23,7 +23,7 @@ public class RecipeDetailActivity extends AppCompatActivity implements RecipyDet
     private int recipeIndex;
     public static String STEP_INDEX= "index";
     public static String STEP_BUNDLE= "bundle";
-
+private StepDetailFragment stepDetailFragment;
     private boolean mTwoPane;
 
     @Override
@@ -51,36 +51,44 @@ public class RecipeDetailActivity extends AppCompatActivity implements RecipyDet
 
 
             if(savedInstanceState == null) {
-                // In two-pane mode, add initial BodyPartFragments to the screen
                 FragmentManager fragmentManager = getSupportFragmentManager();
 
-                // Creating a new head fragment
-//                BodyPartFragment headFragment = new BodyPartFragment();
-//                headFragment.setImageIds(AndroidImageAssets.getHeads());
-                // Add the fragment to its container using a transaction
-//                fragmentManager.beginTransaction()
-//                        .add(R.id.head_container, headFragment)
-//                        .commit();
-
-
+                stepDetailFragment = new StepDetailFragment();
+                stepDetailFragment.setSteps(steps);
+                stepDetailFragment.setStepIndex(0);
+                fragmentManager.beginTransaction()
+                        .add(R.id.step_container, stepDetailFragment)
+                        .addToBackStack(null)
+                        .commit();
             }
         } else {
-
             mTwoPane = false;
         }
     }
 
     @Override
     public void onStepSelected(int position) {
-//        Toast.makeText(this,"aaaa" + String.valueOf(position),Toast.LENGTH_LONG).show();
-        Bundle bundle = new Bundle();
-        Intent intent = new Intent(getApplicationContext(), StepDetailActivity.class);
-        bundle.putInt(STEP_INDEX,position);
-        bundle.putParcelableArrayList(STEP_BUNDLE, steps);
-        intent.putExtra("REAL",bundle);
-        startActivity(intent);
-//        intent.putExtra(STEP_INDEX,position);
-//        intent.putParcelableArrayListExtra(STEP_BUNDLE,steps);
+        if(!mTwoPane){
+            Bundle bundle = new Bundle();
+            Intent intent = new Intent(getApplicationContext(), StepDetailActivity.class);
+            bundle.putInt(STEP_INDEX,position);
+            bundle.putParcelableArrayList(STEP_BUNDLE, steps);
+            intent.putExtra("REAL",bundle);
+            startActivity(intent);
+
+        }else {
+            StepDetailFragment newFragment = new StepDetailFragment();
+            stepDetailFragment.releasePlayer();
+            newFragment.releasePlayer();
+
+            newFragment.setStepIndex(position);
+            newFragment.setSteps(steps);
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.step_container,newFragment)
+                    .addToBackStack(null)
+                    .commit();
+        }
+
 
 
     }
