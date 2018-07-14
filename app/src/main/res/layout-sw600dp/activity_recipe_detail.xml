@@ -9,7 +9,7 @@
     <fragment
         android:id="@+id/recipy_details_fragment"
         android:name="pl.preclaw.recipies.RecipyDetailsFragment"
-        android:layout_width="400dp"
+        android:layout_width="350dp"
 
         android:layout_height="match_parent" />
     <View

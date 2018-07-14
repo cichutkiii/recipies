@@ -23,6 +23,9 @@ public class RecipeDetailActivity extends AppCompatActivity implements RecipyDet
     private int recipeIndex;
     public static String STEP_INDEX= "index";
     public static String STEP_BUNDLE= "bundle";
+    public static String PANES= "panes";
+
+    FragmentManager fragmentManager;
 private StepDetailFragment stepDetailFragment;
     private boolean mTwoPane;
 
@@ -33,10 +36,15 @@ private StepDetailFragment stepDetailFragment;
 
     }
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe_detail);
+
+
+
         Bundle bundle = getIntent().getExtras();
         RecipyList recipyList = new RecipyList();
         if (bundle != null) {
@@ -45,25 +53,38 @@ private StepDetailFragment stepDetailFragment;
             recipy = recipyList.getRecipies().get(recipeIndex);
             steps = (ArrayList<Step>) recipy.getSteps();
         }
-
-        if(findViewById(R.id.step_linear_layout)!= null){
+        if(savedInstanceState ==null){
+            if(findViewById(R.id.step_linear_layout)!= null){
             mTwoPane = true;
+            fragmentManager = getSupportFragmentManager();
+            stepDetailFragment = new StepDetailFragment();
+            stepDetailFragment.setSteps(steps);
+            stepDetailFragment.setStepIndex(0);
+            fragmentManager.beginTransaction()
+                .add(R.id.step_container, stepDetailFragment)
+                .addToBackStack(null)
+                .commit();
 
-
-            if(savedInstanceState == null) {
-                FragmentManager fragmentManager = getSupportFragmentManager();
-
-                stepDetailFragment = new StepDetailFragment();
-                stepDetailFragment.setSteps(steps);
-                stepDetailFragment.setStepIndex(0);
-                fragmentManager.beginTransaction()
-                        .add(R.id.step_container, stepDetailFragment)
-                        .addToBackStack(null)
-                        .commit();
+            } else {
+                mTwoPane = false;
             }
-        } else {
-            mTwoPane = false;
+        } else{
+            if(findViewById(R.id.step_linear_layout)!= null) {
+                mTwoPane = true;
+                stepDetailFragment = new StepDetailFragment();
+
+
+            }
+            else {
+                mTwoPane = false;
+            }
         }
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(PANES,mTwoPane);
+
     }
 
     @Override

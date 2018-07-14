@@ -3,7 +3,10 @@ package pl.preclaw.recipies;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
@@ -49,6 +53,15 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
     private int index;
     private SimpleExoPlayer mExoPlayer;
     private String userAgent;
+    private Long positionPlayer;
+    private boolean playWhenReady;
+    private MediaSessionCompat mediaSessionCompat;
+    private PlaybackStateCompat.Builder playbackBuilder;
+    private static String RESUME_STEPS_LIST = "list";
+    private static String RESUME_STEP_INDEX = "step";
+    private static String RESUME_STEP_READY = "ready";
+    private static String RESUME_VIDEO_POS = "position";
+
 
     public StepDetailFragment() {
         // Required empty public constructor
@@ -73,8 +86,15 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_step_detail, container, false);
+        positionPlayer =  0L;
         unbinder = ButterKnife.bind(this, view);
         userAgent = Util.getUserAgent(getContext(), "recipies");
+        if(savedInstanceState !=null){
+            index = savedInstanceState.getInt(RESUME_STEP_INDEX);
+            steps = savedInstanceState.getParcelableArrayList(RESUME_STEPS_LIST);
+            positionPlayer = savedInstanceState.getLong(RESUME_VIDEO_POS);
+            playWhenReady = savedInstanceState.getBoolean(RESUME_STEP_READY);
+        }
         setStepData();
 
         return view;
@@ -88,6 +108,16 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
         index = idx;
     }
 
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(RESUME_STEP_INDEX, index);
+        outState.putParcelableArrayList(RESUME_STEPS_LIST, steps);
+        outState.putLong(RESUME_VIDEO_POS, positionPlayer);
+        outState.putBoolean(RESUME_STEP_READY, playWhenReady);
+
+
+    }
 
     @Override
     public void onDestroyView() {
@@ -99,13 +129,15 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
 
             playerView.showController();
             playerView.setVisibility(View.VISIBLE);
+            initializeMedia();
+            initializePlayer(Uri.parse(steps.get(index).getVideoURL()));
+
             if (!(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT))
             {
                 hideUI();
                 playerView.getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
-                playerView.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
+                playerView.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
             }
-            initializePlayer(Uri.parse(steps.get(index).getVideoURL()));
 
         } else {
             detailDescr.setText(Html.fromHtml(steps.get(index).getDescription()));
@@ -129,8 +161,21 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
 
             MediaSource mediaSource = new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(mediaUri);
             mExoPlayer.prepare(mediaSource);
-            mExoPlayer.setPlayWhenReady(false);
         }
+    }
+
+    private void initializeMedia() {
+        mediaSessionCompat = new MediaSessionCompat(getContext(), "MEDIASESSION");
+        mediaSessionCompat.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSessionCompat.setMediaButtonReceiver(null);
+        playbackBuilder = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE |
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                        PlaybackStateCompat.ACTION_PLAY_PAUSE);
+        mediaSessionCompat.setPlaybackState(playbackBuilder.build());
+        mediaSessionCompat.setCallback(new StepDetailFragment.SessionCallBacks());
+        mediaSessionCompat.setActive(true);
     }
     public void releasePlayer() {
         if(mExoPlayer != null){
@@ -167,7 +212,13 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
 
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-
+        if (playbackState == ExoPlayer.STATE_READY && playWhenReady) {
+            playbackBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                    mExoPlayer.getCurrentPosition(), 1f);
+        } else if (playbackState == ExoPlayer.STATE_READY) {
+            playbackBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                    mExoPlayer.getCurrentPosition(), 1f);
+        }
     }
 
     @Override
@@ -198,5 +249,50 @@ public class StepDetailFragment extends Fragment implements Player.EventListener
     @Override
     public void onSeekProcessed() {
 
+    }
+    private class SessionCallBacks extends MediaSessionCompat.Callback {
+
+        @Override
+        public void onPlay() {
+            super.onPlay();
+            mExoPlayer.setPlayWhenReady(true);
+        }
+
+        @Override
+        public void onPause() {
+            super.onPause();
+            mExoPlayer.setPlayWhenReady(false);
+        }
+
+        @Override
+        public void onSkipToPrevious() {
+            super.onSkipToPrevious();
+            mExoPlayer.seekTo(0);
+        }
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (mExoPlayer != null) {
+            positionPlayer = mExoPlayer.getCurrentPosition();
+            playWhenReady = mExoPlayer.getPlayWhenReady();
+            mExoPlayer.stop();
+            mExoPlayer.release();
+            mExoPlayer = null;
+        }
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mExoPlayer != null) {
+            //resuming properly
+            mExoPlayer.setPlayWhenReady(playWhenReady);
+            mExoPlayer.seekTo(positionPlayer);
+        } else {
+            initializeMedia();
+            initializePlayer(Uri.parse(steps.get(index).getVideoURL()));
+            mExoPlayer.setPlayWhenReady(playWhenReady);
+            mExoPlayer.seekTo(positionPlayer);
+        }
     }
 }

@@ -2,6 +2,10 @@ package pl.preclaw.recipies;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
+import android.support.test.espresso.IdlingResource;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,6 +25,7 @@ import pl.preclaw.recipies.importData.RecipeInteface;
 import pl.preclaw.recipies.importData.Recipy;
 import pl.preclaw.recipies.importData.RecipyList;
 import pl.preclaw.recipies.utilities.RecipyAdapter;
+import pl.preclaw.recipies.utilities.SimpleIdlingResource;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -40,6 +45,18 @@ public class MainActivity extends AppCompatActivity implements RecipyAdapter.Lis
     public static String RECIPE_DETAIL= "detail";
     public static String RECIPE_INDEX= "index";
     public static String RECIPE_BUNDLE= "bundle";
+
+    @Nullable
+    private SimpleIdlingResource mIdlingResource;
+
+    @VisibleForTesting
+    @NonNull
+    public IdlingResource getIdlingResource() {
+        if (mIdlingResource == null) {
+            mIdlingResource = new SimpleIdlingResource(getPackageName());
+        }
+        return mIdlingResource;
+    }
 
 
     @Override

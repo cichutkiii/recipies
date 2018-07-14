@@ -8,10 +8,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
@@ -35,8 +35,10 @@ import java.util.ArrayList;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import pl.preclaw.recipies.importData.RecipyList;
+
+
 import pl.preclaw.recipies.importData.Step;
+
 
 public class StepDetailActivity extends AppCompatActivity implements Player.EventListener {
 
@@ -51,37 +53,66 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
 
     @BindView(R.id.playerView)
     PlayerView playerView;
+
     @BindView(R.id.descr_previous)
     Button previous;
+
     @BindView(R.id.descr_next)
     Button next;
+
     @BindView(R.id.detail_descr)
     TextView detailDescr;
 
-    private ArrayList<Step> steps;
-    private int recipeIndex;
-    public static String STEP_INDEX = "index";
-    public static String STEP_BUNDLE = "bundle";
-    private SimpleExoPlayer mExoPlayer;
-    private static MediaSessionCompat mMediaSession;
-    private PlaybackStateCompat.Builder mStateBuilder;
-    private String userAgent;
+     ArrayList<Step> steps;
 
+    int recipeIndex;
+    private static String STEP_INDEX = "index";
+    private static String STEP_BUNDLE = "bundle";
+    private static String RESUME_VIDEO_POS = "position";
+    private static String RESUME_VIDEO_VIS = "visibility";
+    private static String RESUME_STEPS_LIST = "list";
+    private static String RESUME_STEP_INDEX = "step";
+    private static String RESUME_STEP_READY = "ready";
+
+    SimpleExoPlayer mExoPlayer;
+    String userAgent;
+    Long positionPlayer;
+    boolean playWhenReady;
+    private MediaSessionCompat mediaSessionCompat;
+    private PlaybackStateCompat.Builder playbackBuilder;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_step_detail);
+        positionPlayer =  0L;
         ButterKnife.bind(this);
-        Bundle bundle = getIntent().getBundleExtra("REAL");
-        if (bundle != null) {
-            steps = bundle.getParcelableArrayList(STEP_BUNDLE);
-            recipeIndex = bundle.getInt(STEP_INDEX);
-
-
-        }
         userAgent = Util.getUserAgent(this, "recipies");
 
-        setStepData();
+        if(savedInstanceState==null){
+            Bundle bundle = getIntent().getBundleExtra("REAL");
+            if(savedInstanceState ==null){
+                if (bundle != null) {
+                    steps = bundle.getParcelableArrayList(STEP_BUNDLE);
+                    recipeIndex = bundle.getInt(STEP_INDEX);
+
+                }
+                initializeMedia();
+                setStepData();
+
+            }
+        }else{
+            recipeIndex = savedInstanceState.getInt(RESUME_STEP_INDEX);
+            steps = savedInstanceState.getParcelableArrayList(RESUME_STEPS_LIST);
+            positionPlayer = savedInstanceState.getLong(RESUME_VIDEO_POS);
+            playWhenReady = savedInstanceState.getBoolean(RESUME_STEP_READY);
+            initializeMedia();
+            setStepData();
+
+        }
+
+
+
+
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -91,6 +122,7 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
                 } else {
                     recipeIndex++;
                 }
+                initializeMedia();
                 releasePlayer();
                 setStepData();
 
@@ -105,11 +137,15 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
                 } else {
                     recipeIndex--;
                 }
+                initializeMedia();
                 releasePlayer();
                 setStepData();
             }
         });
     }
+
+
+
 
 
     private void setStepData() {
@@ -129,15 +165,21 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
 
     }
 
-    private void hideUI() {
-        this.getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
+
+    private void initializeMedia() {
+        mediaSessionCompat = new MediaSessionCompat(getApplicationContext(), "MEDIASESSION");
+        mediaSessionCompat.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSessionCompat.setMediaButtonReceiver(null);
+        playbackBuilder = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE |
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS |
+                        PlaybackStateCompat.ACTION_PLAY_PAUSE);
+        mediaSessionCompat.setPlaybackState(playbackBuilder.build());
+        mediaSessionCompat.setCallback(new SessionCallBacks());
+        mediaSessionCompat.setActive(true);
     }
+
 
     private void initializePlayer(Uri mediaUri) {
         if (mExoPlayer == null) {
@@ -151,16 +193,10 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
 
             MediaSource mediaSource = new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(mediaUri);
             mExoPlayer.prepare(mediaSource);
-            mExoPlayer.setPlayWhenReady(false);
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        releasePlayer();
 
-    }
 
     private void releasePlayer() {
         if(mExoPlayer != null){
@@ -191,6 +227,13 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
 
+        if (playbackState == ExoPlayer.STATE_READY && playWhenReady) {
+            playbackBuilder.setState(PlaybackStateCompat.STATE_PLAYING,
+                    mExoPlayer.getCurrentPosition(), 1f);
+        } else if (playbackState == ExoPlayer.STATE_READY) {
+            playbackBuilder.setState(PlaybackStateCompat.STATE_PAUSED,
+                    mExoPlayer.getCurrentPosition(), 1f);
+        }
     }
 
     @Override
@@ -221,6 +264,71 @@ public class StepDetailActivity extends AppCompatActivity implements Player.Even
     @Override
     public void onSeekProcessed() {
 
+
     }
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(RESUME_VIDEO_VIS, playerView.getVisibility());
+        outState.putInt(RESUME_STEP_INDEX, recipeIndex);
+        outState.putLong(RESUME_VIDEO_POS, positionPlayer);
+        outState.putParcelableArrayList(RESUME_STEPS_LIST, steps);
+        outState.putBoolean(RESUME_STEP_READY, playWhenReady);
+
+
+
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        releasePlayer();
+
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mExoPlayer != null) {
+            positionPlayer = mExoPlayer.getCurrentPosition();
+            playWhenReady = mExoPlayer.getPlayWhenReady();
+            mExoPlayer.stop();
+            mExoPlayer.release();
+            mExoPlayer = null;
+        }
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mExoPlayer != null) {
+            //resuming properly
+            mExoPlayer.setPlayWhenReady(playWhenReady);
+            mExoPlayer.seekTo(positionPlayer);
+        } else {
+            initializeMedia();
+            initializePlayer(Uri.parse(steps.get(recipeIndex).getVideoURL()));
+            mExoPlayer.setPlayWhenReady(playWhenReady);
+            mExoPlayer.seekTo(positionPlayer);
+        }
+    }
+    private class SessionCallBacks extends MediaSessionCompat.Callback {
+
+        @Override
+        public void onPlay() {
+            super.onPlay();
+            mExoPlayer.setPlayWhenReady(true);
+        }
+
+        @Override
+        public void onPause() {
+            super.onPause();
+            mExoPlayer.setPlayWhenReady(false);
+        }
+
+        @Override
+        public void onSkipToPrevious() {
+            super.onSkipToPrevious();
+            mExoPlayer.seekTo(0);
+        }
+    }
+
 
 }

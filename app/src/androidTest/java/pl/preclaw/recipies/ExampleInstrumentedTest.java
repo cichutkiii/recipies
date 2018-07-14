@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("recipies.preclaw.pl.recipies", appContext.getPackageName());
+        assertEquals("pl.preclaw.recipies", appContext.getPackageName());
     }
 }
