@@ -70,11 +70,13 @@ public class BakingWidget extends AppWidgetProvider {
 
         final String action = intent.getAction();
 
-        if (action.equals("android.appwidget.action.UPDATE2")) {
+        if (action.equals("android.appwidget.action.APPWIDGET_UPDATE2")) {
             ingredientsList = intent.getExtras().getStringArrayList(INGREDIENTS_LIST);
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_gv);
+            //Now update all widgets
             BakingWidget.updateWidget(context, appWidgetManager, appWidgetIds);
             super.onReceive(context, intent);
-        }    }
+        }
+    }
 }
 
