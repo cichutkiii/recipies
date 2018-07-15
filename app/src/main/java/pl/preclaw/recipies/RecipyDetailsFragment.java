@@ -12,13 +12,20 @@ import android.widget.AdapterView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import pl.preclaw.recipies.importData.Ingredient;
 import pl.preclaw.recipies.importData.Recipy;
 import pl.preclaw.recipies.importData.RecipyList;
 import pl.preclaw.recipies.utilities.IngredientAdapter;
 import pl.preclaw.recipies.utilities.StepAdapter;
+import pl.preclaw.recipies.widget.UpdateWidgetService;
 
 import static java.lang.Boolean.FALSE;
 
@@ -88,6 +95,16 @@ public class RecipyDetailsFragment extends Fragment implements StepAdapter.ListI
         }
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
         LinearLayoutManager stepLayoutManager = new LinearLayoutManager(getActivity().getApplicationContext());
+        ArrayList<String> widgetIngredients= new ArrayList<>();
+       List<Ingredient> ingredients = recipy.getIngredients();
+        for(int i=0;i<ingredients.size();i++){
+            String sumText = recipy.getIngredients().get(i).getQuantity().toString()
+                    + " "
+                    + getUnit(recipy.getIngredients().get(i).getMeasure())
+                    + " of "
+                    +recipy.getIngredients().get(i).getIngredient();
+            widgetIngredients.add(sumText);
+        }
 
         ingredientAdapter = new IngredientAdapter(recipy);
         stepAdapter = new StepAdapter(recipy.getSteps(),this);
@@ -98,6 +115,7 @@ public class RecipyDetailsFragment extends Fragment implements StepAdapter.ListI
         stepsRv.setHasFixedSize(true);
         stepsRv.setLayoutManager(stepLayoutManager);
         stepsRv.setAdapter(stepAdapter);
+        UpdateWidgetService.startBakingService(getContext(),widgetIngredients);
 
         return rootView;
     }
@@ -109,5 +127,16 @@ public class RecipyDetailsFragment extends Fragment implements StepAdapter.ListI
         unbinder.unbind();
     }
 
+    private String getUnit(String shortUnit){
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("CUP", "cup");
+        map.put("TBLSP", "table spoon");
+        map.put("TSP", "tea spoon");
+        map.put("G", "gram");
+        map.put("UNIT", "unit");
+        map.put("OZ", "oz");
 
+
+        return map.get(shortUnit);
+    }
 }
