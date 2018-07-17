@@ -1,7 +1,11 @@
 package pl.preclaw.recipies;
 
+import android.support.test.espresso.IdlingRegistry;
+import android.support.test.espresso.IdlingResource;
 import android.support.test.rule.ActivityTestRule;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -19,7 +23,13 @@ public class MovingbetweenActivitiesTest {
     private static String RECIPE = "Brownies";
     private static String INTRO = "Recipe Introduction";
     private static String RECIPE2 = "Nutella Pie";
+    private IdlingResource mIdlingResource;
 
+    @Before
+    public void registerIdlingResource() {
+        mIdlingResource = activityTestRule.getActivity().getIdlingResource();
+        IdlingRegistry.getInstance().register(mIdlingResource);
+    }
     @Test
     public void checkIfPreviousAndNextButtonExist()  {
 
@@ -40,6 +50,12 @@ public class MovingbetweenActivitiesTest {
         for(int i=0;i<40;i++) {
 
             onView(withId(R.id.descr_next)).perform(click());
+        }
+    }
+    @After
+    public void unregisterIdlingResource() {
+        if (mIdlingResource != null) {
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
         }
     }
 }
